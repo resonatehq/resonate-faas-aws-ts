@@ -39,7 +39,7 @@ export class Resonate {
 		this.registry.add(func, name, version);
 	}
 
-	public handler(): LambdaHandler<
+	public httpHandler(): LambdaHandler<
 		APIGatewayProxyEventV2,
 		APIGatewayProxyResultV2
 	> {
@@ -182,6 +182,7 @@ export class Resonate {
 	}
 }
 
+// Usage example
 const resonate = new Resonate();
 
 function foo(_ctx: Context): string {
@@ -189,4 +190,4 @@ function foo(_ctx: Context): string {
 }
 
 resonate.register(foo);
-export const handler = resonate.handler();
+export const handler = resonate.httpHandler();
