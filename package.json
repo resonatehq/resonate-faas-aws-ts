@@ -1,0 +1,27 @@
+{
+	"name": "resonate-faas-aws-ts",
+	"version": "1.0.0",
+	"description": "Resonate SDK shim to run in AWS faas.",
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc",
+		"fmt": "npx @biomejs/biome format --write",
+		"lint": "npx @biomejs/biome lint --write"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.6",
+		"@types/aws-lambda": "^8.10.155",
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"dependencies": {
+		"@resonatehq/sdk": "^0.8.3"
+	}
+}
