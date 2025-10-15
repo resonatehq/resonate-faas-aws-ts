@@ -19,49 +19,6 @@ import type {
 export class Resonate {
 	private registry = new Registry();
 
-	/**
-	 * Registers a function with Resonate for execution and version control.
-	 *
-	 * This method makes a function available for distributed or top-level execution
-	 * under a specific name and version.
-	 *
-	 * Providing explicit `name` or `version` options allows precise control over
-	 * function identification and versioning, enabling repeatable, distributed
-	 * invocation and backward-compatible deployments.
-	 *
-	 * @param nameOrFunc - Either the function name (string) or the function itself.
-	 *   When passing a name, provide the function and optional options as additional parameters.
-	 * @param funcOrOptions - The function to register, or an optional configuration object
-	 *   with versioning information when the first argument is a name.
-	 * @param maybeOptions - Optional configuration object when both name and function are provided.
-	 *   Supports a `version` field to specify the registered function version.
-	 *
-	 * @returns A {@link ResonateFunc} wrapper for the registered function.
-	 *   When used as a decorator, returns a decorator that registers the target function
-	 *   upon definition.
-	 *
-	 * @example
-	 * ```ts
-	 * function greet(ctx: Context, name: string): string {
-	 *   return `Hello, ${name}!`;
-	 * }
-	 *
-	 * resonate.register("greet_user", greet, { version: 2 });
-	 * ```
-	 */
-	public register<F extends Func>(
-		name: string,
-		func: F,
-		options?: {
-			version?: number;
-		},
-	): void;
-	public register<F extends Func>(
-		func: F,
-		options?: {
-			version?: number;
-		},
-	): void;
 	public register<F extends Func>(
 		nameOrFunc: string | F,
 		funcOrOptions?:
@@ -80,7 +37,6 @@ export class Resonate {
 		const name = typeof nameOrFunc === "string" ? nameOrFunc : func.name;
 
 		this.registry.add(func, name, version);
-		return;
 	}
 
 	public handler(): LambdaHandler<
@@ -90,137 +46,135 @@ export class Resonate {
 		return async (
 			event: APIGatewayProxyEventV2,
 		): Promise<APIGatewayProxyResultV2> => {
-			const method = event.requestContext.http.method;
+			try {
+				if (event.requestContext.http.method !== "POST") {
+					return {
+						statusCode: 405,
+						body: JSON.stringify({ error: "Method not allowed. Use POST." }),
+					};
+				}
 
-			if (method !== "POST") {
-				return {
-					statusCode: 405,
-					body: JSON.stringify({
-						message: "Method not allowed. Use POST.",
-					}),
-				};
-			}
+				// Ensure required headers
+				const proto = event.headers["x-forwarded-proto"];
+				const host = event.headers.host;
+				if (!proto || !host) {
+					return {
+						statusCode: 400,
+						body: JSON.stringify({
+							error: "Missing required headers: x-forwarded-proto or host.",
+						}),
+					};
+				}
 
-			const proto = event.headers["x-forwarded-proto"];
-			if (proto === undefined) {
-				return {
-					statusCode: 405,
-					body: JSON.stringify({
-						message: "x-forwarded-proto not present",
-					}),
-				};
-			}
-			const host = event.headers.host;
-			if (host === undefined) {
-				return {
-					statusCode: 405,
-					body: JSON.stringify({
-						message: "host not present",
-					}),
-				};
-			}
-			const url = `${proto}://${host}`;
+				// Construct full invocation URL
+				const url = `${proto}://${host}${event.requestContext.http.path ?? ""}`;
 
-			const encoder = new JsonEncoder();
-			const network = new HttpNetwork({
-				url: "https://616c255336f5.ngrok-free.app",
-				timeout: 60000, // 1 minute timeout
-				headers: {},
-			});
+				// Ensure body exists
+				if (!event.body) {
+					return {
+						statusCode: 400,
+						body: JSON.stringify({ error: "Request body missing." }),
+					};
+				}
 
-			console.log(event);
+				// Parse JSON body
+				const body = JSON.parse(event.body);
 
-			const body = event.body;
-			if (body === undefined) {
-				return {
-					statusCode: 405,
-					body: JSON.stringify({
-						message: "body not present",
-					}),
-				};
-			}
+				console.log("Received request body:", JSON.stringify(body, null, 2));
 
-			const data = JSON.parse(body);
+				// Validate task structure
+				if (
+					!body ||
+					!(body.type === "invoke" || body.type === "resume") ||
+					!body.task
+				) {
+					return {
+						statusCode: 400,
+						body: JSON.stringify({
+							error:
+								'Request body must contain "type" and "task" for Resonate invocation.',
+						}),
+					};
+				}
 
-			if ((data.type === "invoke" || data.type === "resume") && data.task) {
-				// Handle HTTP invocation/resume from Resonate server
-				console.log(
-					"Processing task:",
-					data.type,
-					data.task.id,
-					"counter:",
-					data.task.counter,
-				);
+				// Build ResonateInner configuration
+				const pid = `pid-${Math.random().toString(36).substring(7)}`;
+				const ttl = 30 * 1000; // 30s
 
-				// Create unclaimed task - ResonateInner will handle claiming
-				const task: Task = {
-					kind: "unclaimed",
-					task: data.task,
-				};
+				const encoder = new JsonEncoder();
+				const network = new HttpNetwork({
+					url: "https://616c255336f5.ngrok-free.app", // 👈 use base url from task message
+					timeout: 60 * 1000,
+					headers: {},
+				});
+
+				const handler = new Handler(network, encoder);
+				const heartbeat = new NoopHeartbeat();
+				const clock = new WallClock();
+				const dependencies = new Map();
 
 				const resonateInner = new ResonateInner({
 					unicast: url,
 					anycastPreference: url,
 					anycastNoPreference: url,
-					pid: `pid-${Math.random().toString(36).substring(7)}`,
-					ttl: 30 * 1000, // 30 seconds
-					clock: new WallClock(),
+					pid,
+					ttl,
+					clock,
 					network,
-					handler: new Handler(network, encoder),
+					handler,
 					registry: this.registry,
-					heartbeat: new NoopHeartbeat(),
-					dependencies: new Map(),
+					heartbeat,
+					dependencies,
 				});
 
-				// Process the task
-				resonateInner.process(task, (error, status) => {
-					if (error || !status) {
-						console.error(
-							"Task processing failed:",
-							JSON.stringify({ error, status }, null, 2),
-						);
-						return {
-							statusCode: 500,
-							body: JSON.stringify({
-								message: "Task processing failed",
-							}),
-						};
-					} else {
+				// Create unclaimed task
+				const task: Task = { kind: "unclaimed", task: body.task };
+
+				// Process the task and await result
+				const result = await new Promise<APIGatewayProxyResultV2>((resolve) => {
+					resonateInner.process(task, (error, status) => {
+						if (error || !status) {
+							console.error("❌ Task processing failed:", { error, status });
+							resolve({
+								statusCode: 500,
+								body: JSON.stringify({
+									error: "Task processing failed",
+									details: { error, status },
+								}),
+							});
+							return;
+						}
+
 						console.log("Task processed successfully:", status);
+
 						if (status.kind === "completed") {
-							return {
+							resolve({
 								statusCode: 200,
 								body: JSON.stringify({
 									status: "completed",
 									result: status.promise.value,
 									requestUrl: url,
 								}),
-							};
+							});
+						} else {
+							resolve({
+								statusCode: 200,
+								body: JSON.stringify({
+									status: "suspended",
+									requestUrl: url,
+								}),
+							});
 						}
-						return {
-							statusCode: 200,
-							body: JSON.stringify({
-								status: "suspended",
-								requestUrl: url,
-							}),
-						};
-					}
+					});
 				});
 
-				const response = {
-					statusCode: 200,
-					body: JSON.stringify({
-						message: "Hello from HTTP!",
-						method: event.requestContext.http.method,
-						event,
-					}),
-				};
-				return response;
-			} else {
+				return result;
+			} catch (error) {
+				console.error("Handler error:", error);
 				return {
-					statusCode: 405,
+					statusCode: 500,
 					body: JSON.stringify({
-						message: "task couldn't be parsed",
+						error: `Handler failed: ${error}`,
 					}),
 				};
 			}
@@ -230,8 +184,9 @@ export class Resonate {
 
 const resonate = new Resonate();
 
-function foo(ctx: Context): string {
+function foo(_ctx: Context): string {
 	return "hello";
 }
+
 resonate.register(foo);
 export const handler = resonate.handler();
