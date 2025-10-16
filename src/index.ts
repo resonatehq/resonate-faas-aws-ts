@@ -1,4 +1,3 @@
-import type { Context } from "@resonatehq/sdk";
 import { WallClock } from "@resonatehq/sdk/dist/src/clock";
 import { HttpNetwork } from "@resonatehq/sdk/dist/src/core";
 import { JsonEncoder } from "@resonatehq/sdk/dist/src/encoder";
@@ -19,6 +18,19 @@ import type {
 export class Resonate {
 	private registry = new Registry();
 
+	public register<F extends Func>(
+		name: string,
+		func: F,
+		options?: {
+			version?: number;
+		},
+	): void;
+	public register<F extends Func>(
+		func: F,
+		options?: {
+			version?: number;
+		},
+	): void;
 	public register<F extends Func>(
 		nameOrFunc: string | F,
 		funcOrOptions?:
@@ -80,8 +92,6 @@ export class Resonate {
 				// Parse JSON body
 				const body = JSON.parse(event.body);
 
-				console.log("Received request body:", JSON.stringify(body, null, 2));
-
 				// Validate task structure
 				if (
 					!body ||
@@ -97,34 +107,25 @@ export class Resonate {
 					};
 				}
 
-				// Build ResonateInner configuration
-				const pid = `pid-${Math.random().toString(36).substring(7)}`;
-				const ttl = 30 * 1000; // 30s
-
 				const encoder = new JsonEncoder();
 				const network = new HttpNetwork({
-					url: "https://616c255336f5.ngrok-free.app", // 👈 use base url from task message
+					url: body.href.base,
 					timeout: 60 * 1000,
 					headers: {},
 				});
-
-				const handler = new Handler(network, encoder);
-				const heartbeat = new NoopHeartbeat();
-				const clock = new WallClock();
-				const dependencies = new Map();
 
 				const resonateInner = new ResonateInner({
 					unicast: url,
 					anycastPreference: url,
 					anycastNoPreference: url,
-					pid,
-					ttl,
-					clock,
+					pid: `pid-${Math.random().toString(36).substring(7)}`,
+					ttl: 30 * 1000,
+					clock: new WallClock(),
 					network,
-					handler,
+					handler: new Handler(network, encoder),
 					registry: this.registry,
-					heartbeat,
-					dependencies,
+					heartbeat: new NoopHeartbeat(),
+					dependencies: new Map(),
 				});
 
 				// Create unclaimed task
@@ -134,7 +135,6 @@ export class Resonate {
 				const result = await new Promise<APIGatewayProxyResultV2>((resolve) => {
 					resonateInner.process(task, (error, status) => {
 						if (error || !status) {
-							console.error("❌ Task processing failed:", { error, status });
 							resolve({
 								statusCode: 500,
 								body: JSON.stringify({
@@ -144,8 +144,6 @@ export class Resonate {
 							});
 							return;
 						}
-
-						console.log("Task processed successfully:", status);
 
 						if (status.kind === "completed") {
 							resolve({
@@ -170,7 +168,6 @@ export class Resonate {
 
 				return result;
 			} catch (error) {
-				console.error("Handler error:", error);
 				return {
 					statusCode: 500,
 					body: JSON.stringify({
@@ -181,13 +178,3 @@ export class Resonate {
 		};
 	}
 }
-
-// Usage example
-const resonate = new Resonate();
-
-function foo(_ctx: Context): string {
-	return "hello";
-}
-
-resonate.register(foo);
-export const handler = resonate.httpHandler();
