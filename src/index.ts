@@ -10,8 +10,8 @@ import {
 } from "@resonatehq/sdk/dist/src/resonate-inner";
 import type { Func } from "@resonatehq/sdk/dist/src/types";
 import type {
-	APIGatewayProxyHandlerV2,
-	APIGatewayProxyResultV2,
+	LambdaFunctionURLHandler,
+	LambdaFunctionURLResult,
 } from "aws-lambda";
 
 export class Resonate {
@@ -50,8 +50,12 @@ export class Resonate {
 		this.registry.add(func, name, version);
 	}
 
-	public httpHandler(): APIGatewayProxyHandlerV2 {
-		return async (event): Promise<APIGatewayProxyResultV2> => {
+	public httpHandler(): LambdaFunctionURLHandler {
+		return async (
+			event,
+			_context,
+			_callback,
+		): Promise<LambdaFunctionURLResult> => {
 			try {
 				if (event.requestContext.http.method !== "POST") {
 					return {
@@ -126,7 +130,7 @@ export class Resonate {
 				const task: Task = { kind: "unclaimed", task: body.task };
 
 				// Process the task and await result
-				const result = new Promise<APIGatewayProxyResultV2>((resolve) => {
+				const result = new Promise<LambdaFunctionURLResult>((resolve) => {
 					resonateInner.process(task, (error, status) => {
 						if (error || !status) {
 							resolve({
