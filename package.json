@@ -1,34 +1,34 @@
 {
-  "name": "@resonatehq/aws",
-  "version": "0.1.3",
-  "description": "Resonate FaaS handler for AWS Lambda Functions (TypeScript)",
-  "repository": {
-    "url": "https://github.com/resonatehq/resonate-faas-aws-ts"
-  },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "keywords": [
-    "resonate",
-    "faas",
-    "aws",
-    "aws-lambda",
-    "durable-execution"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "check": "npx @biomejs/biome check",
-    "fmt": "npx @biomejs/biome check --write"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.2.6",
-    "@types/bun": "latest",
-    "open": "^10.2.0",
-    "@types/aws-lambda": "^8.10.155"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "dependencies": {
-    "@resonatehq/sdk": ">=0.8.3 <1.0.0"
-  }
+	"name": "@resonatehq/aws",
+	"version": "0.1.4",
+	"description": "Resonate FaaS handler for AWS Lambda Functions (TypeScript)",
+	"repository": {
+		"url": "https://github.com/resonatehq/resonate-faas-aws-ts"
+	},
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"keywords": [
+		"resonate",
+		"faas",
+		"aws",
+		"aws-lambda",
+		"durable-execution"
+	],
+	"scripts": {
+		"build": "tsc",
+		"check": "npx @biomejs/biome check",
+		"fmt": "npx @biomejs/biome check --write"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.6",
+		"@types/bun": "latest",
+		"open": "^10.2.0",
+		"@types/aws-lambda": "^8.10.156"
+	},
+	"peerDependencies": {
+		"typescript": "^5.9.3"
+	},
+	"dependencies": {
+		"@resonatehq/sdk": "^0.8.4"
+	}
 }

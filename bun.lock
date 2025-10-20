@@ -36,7 +36,7 @@
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.2.6", "", { "os": "win32", "cpu": "x64" }, "sha512-yx0CqeOhPjYQ5ZXgPfu8QYkgBhVJyvWe36as7jRuPrKPO5ylVDfwVtPQ+K/mooNTADW0IhxOZm3aPu16dP8yNQ=="],
 
-    "@resonatehq/sdk": ["@resonatehq/sdk@0.8.3", "", { "dependencies": { "cron-parser": "^5.3.0", "eventsource": "^4.0.0" } }, "sha512-Q9C3PEU78yc4DWwS6aRU3zGPKAGHmuvi+K9Z1rTdhMZ/G9ZodtkBy6zX0zTFdGLjTXSfoRL4E3TRjvz45MMpag=="],
+    "@resonatehq/sdk": ["@resonatehq/sdk@0.8.4", "", { "dependencies": { "cron-parser": "^5.3.0", "eventsource": "^4.0.0" } }, "sha512-d1tbb5LV6NJfUlyFImGwAzPgeqQvY7Nf3VCfJecKvwCvO5nKQo8MusqDoy+IlMi1QkYXw/BtNhWuSkt6rlOrlA=="],
 
     "@types/aws-lambda": ["@types/aws-lambda@8.10.156", "", {}, "sha512-LElQP+QliVWykC7OF8dNr04z++HJCMO2lF7k9HuKoSDARqhcjHq8MzbrRwujCSDeBHIlvaimbuY/tVZL36KXFQ=="],
 
