@@ -1,14 +1,14 @@
-import { WallClock } from "@resonatehq/sdk/dist/src/clock";
-import { HttpNetwork } from "@resonatehq/sdk/dist/src/core";
-import { JsonEncoder } from "@resonatehq/sdk/dist/src/encoder";
-import { Handler } from "@resonatehq/sdk/dist/src/handler";
-import { NoopHeartbeat } from "@resonatehq/sdk/dist/src/heartbeat";
-import { Registry } from "@resonatehq/sdk/dist/src/registry";
 import {
+	type Func,
+	Handler,
+	HttpNetwork,
+	JsonEncoder,
+	NoopHeartbeat,
+	Registry,
 	ResonateInner,
 	type Task,
-} from "@resonatehq/sdk/dist/src/resonate-inner";
-import type { Func } from "@resonatehq/sdk/dist/src/types";
+	WallClock,
+} from "@resonatehq/sdk";
 import type {
 	LambdaFunctionURLHandler,
 	LambdaFunctionURLResult,
@@ -16,6 +16,10 @@ import type {
 
 export class Resonate {
 	private registry = new Registry();
+	private verbose: boolean;
+	constructor({ verbose = false }: { verbose?: boolean } = {}) {
+		this.verbose = verbose;
+	}
 
 	public register<F extends Func>(
 		name: string,
@@ -107,23 +111,25 @@ export class Resonate {
 
 				const encoder = new JsonEncoder();
 				const network = new HttpNetwork({
-					url: body.href.base,
-					timeout: 60 * 1000,
 					headers: {},
+					timeout: 60 * 1000,
+					url: body.href.base,
+					verbose: this.verbose,
 				});
 
 				const resonateInner = new ResonateInner({
-					unicast: url,
-					anycastPreference: url,
 					anycastNoPreference: url,
-					pid: `pid-${Math.random().toString(36).substring(7)}`,
-					ttl: 30 * 1000,
+					anycastPreference: url,
 					clock: new WallClock(),
-					network,
-					handler: new Handler(network, encoder),
-					registry: this.registry,
-					heartbeat: new NoopHeartbeat(),
 					dependencies: new Map(),
+					handler: new Handler(network, encoder),
+					heartbeat: new NoopHeartbeat(),
+					network,
+					pid: `pid-${Math.random().toString(36).substring(7)}`,
+					registry: this.registry,
+					ttl: 30 * 1000,
+					unicast: url,
+					verbose: this.verbose,
 				});
 
 				// Create unclaimed task
