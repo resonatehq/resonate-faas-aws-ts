@@ -22,7 +22,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.2.6",
 		"@types/bun": "latest",
-		"open": "^10.2.0",
+		"open": "^11.0.0",
 		"@types/aws-lambda": "^8.10.156"
 	},
 	"peerDependencies": {
