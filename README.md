@@ -29,8 +29,11 @@ Illustration of executing `factorial(2)` on AWS Lambda:
 
 ## Quick Start
 
-### 1. Install
-
 ```bash
 npm install @resonatehq/aws
 ```
+
+See [AWS Lambda documentation](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) to learn how to develop and deploy AWS Lambda functions and see Resonate's AWS Lambda examples for a step by step tutorial
+
+- [Durable Countdown]()
+- [Durable, Recursive Research Agent]()

@@ -186,10 +186,6 @@
           <tspan font-family="Helvetica Neue" font-size="16" fill="white" x="310.744" y="15" xml:space="preserve">Resonate Server</tspan>
         </text>
       </g>
-      <g id="Graphic_498">
-        <rect x="280" y="-2255.1" width="40" height="35" fill="white"/>
-        <rect x="280" y="-2255.1" width="40" height="35" stroke="#353f58" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-      </g>
       <g id="Graphic_508">
         <text transform="translate(330 -2561.824)" fill="#353f58">
           <tspan font-family="Helvetica Neue" font-size="16" fill="#353f58" x="8739676e-19" y="15" xml:space="preserve">return</tspan>
