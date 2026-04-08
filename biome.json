@@ -13,6 +13,6 @@
     }
   },
   "files": {
-    "includes": ["**", "!dist", "!gcp"]
+    "includes": ["**", "!dist"]
   }
 }
