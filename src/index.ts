@@ -142,11 +142,7 @@ export class Resonate {
   }
 
   public handlerHttp(): LambdaFunctionURLHandler {
-    return async (
-      event,
-      _context,
-      _callback,
-    ): Promise<LambdaFunctionURLResult> => {
+    return async (event): Promise<LambdaFunctionURLResult> => {
       try {
         if (event.requestContext.http.method !== "POST") {
           return {
