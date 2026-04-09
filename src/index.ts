@@ -143,8 +143,12 @@ export class Resonate {
 
   public handlerHttp(): LambdaFunctionURLHandler {
     return async (event): Promise<LambdaFunctionURLResult> => {
+      const method = event.requestContext.http.method;
+      const path = event.requestContext.http.path ?? "/";
+
+
       try {
-        if (event.requestContext.http.method !== "POST") {
+        if (method !== "POST") {
           return {
             statusCode: 405,
             body: JSON.stringify({ error: "Method not allowed. Use POST." }),
@@ -183,9 +187,17 @@ export class Resonate {
 
         // The function's own public URL — used as the anycast address so
         // sub-tasks are routed back to this same function invocation.
+        // Prefer reconstructing from headers (works in Lambda + API GW).
+        // Fall back to FUNCTION_URL env var (useful for SAM local and Lambda
+        // Function URLs where forwarded headers may be absent).
         const proto = event.headers["x-forwarded-proto"];
         const host = event.headers.host;
-        if (!proto || !host) {
+        const functionUrl =
+          proto && host
+            ? `${proto}://${host}${path}`
+            : process.env.FUNCTION_URL ?? null;
+
+        if (!functionUrl) {
           return {
             statusCode: 500,
             body: JSON.stringify({
@@ -207,7 +219,7 @@ export class Resonate {
           optsBuilder: new OptionsBuilder({
             match: (target: string): string => {
               if (isUrl(target)) return target;
-              return `${proto}://${host}${event.requestContext.http.path ?? ""}`;
+              return functionUrl;
             },
             idPrefix: this.idPrefix,
           }),
