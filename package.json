@@ -1,6 +1,6 @@
 {
   "name": "@resonatehq/aws",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Resonate FaaS handler for AWS Lambda Functions (TypeScript)",
   "repository": {
     "url": "https://github.com/resonatehq/resonate-faas-aws-ts"
